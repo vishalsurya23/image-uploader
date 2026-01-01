@@ -1,0 +1,423 @@
+1)hamming code
+#include <stdio.h>
+
+int main() {
+    int data[7], dataatrec[7];
+    int c1, c2, c3, c, i;
+
+    printf("Enter 4 data bits (d1 d2 d3 d4):\n");
+    scanf("%d", &data[0]); // d1
+    scanf("%d", &data[1]); // d2
+    scanf("%d", &data[2]); // d3
+    scanf("%d", &data[4]); // d4
+
+    /* Calculate parity bits */
+    data[3] = data[0] ^ data[1] ^ data[2]; // p1
+    data[5] = data[0] ^ data[1] ^ data[4]; // p2
+    data[6] = data[0] ^ data[2] ^ data[4]; // p3
+
+    printf("\nEncoded data: ");
+    for (i = 0; i < 7; i++)
+        printf("%d", data[i]);
+
+    printf("\n\nEnter received 7 bits:\n");
+    for (i = 0; i < 7; i++)
+        scanf("%d", &dataatrec[i]);
+
+    /* Error checking */
+    c1 = dataatrec[3] ^ dataatrec[2] ^ dataatrec[1] ^ dataatrec[0];
+    c2 = dataatrec[5] ^ dataatrec[4] ^ dataatrec[1] ^ dataatrec[0];
+    c3 = dataatrec[6] ^ dataatrec[4] ^ dataatrec[2] ^ dataatrec[0];
+
+    c = c3 * 4 + c2 * 2 + c1;
+
+    if (c == 0) {
+        printf("\nNo error detected\n");
+    } else {
+        printf("\nError at position: %d", c);
+
+        /* Correct the error */
+        dataatrec[c - 1] ^= 1;
+
+        printf("\nCorrected data: ");
+        for (i = 0; i < 7; i++)
+            printf("%d", dataatrec[i]);
+    }
+
+    return 0;
+}
+
+2)stop and wait
+#include<iostream>
+#include <time.h>
+#include <cstdlib>
+#include<ctime>
+#include <unistd.h>
+using namespace std;
+class timer {
+    private:
+     unsigned long begTime;
+    public:
+     void start() {
+      begTime = clock();
+     }
+  unsigned long elapsedTime() {
+      return ((unsigned long) clock() - begTime) / CLOCKS_PER_SEC;
+    }
+   bool isTimeout(unsigned long seconds) {
+      return seconds >= elapsedTime();
+     }
+};
+int main()
+{
+ int frames[] = {1,2,3,4};
+ unsigned long seconds = 5;
+ srand(time(NULL));
+ timer t;
+ cout<<"Sender has to send frames : ";
+ for(int i=0;i<4;i++)
+     cout<<frames[i]<<" ";
+
+ cout<<endl;
+ int count = 0;
+ bool delay = false;
+ cout<<endl<<"Sender\t\t\t\t\tReceiver"<<endl;
+do
+ {
+     bool timeout = false;
+     cout<<"Sending Frame : "<<frames[count];
+     cout.flush();
+     cout<<"\t\t";
+     t.start();
+     if(rand()%2)
+     {
+         int to = 2450 + rand()%(6400 - 2450)  + 1;
+             for(int i=0;i<6400;i++)
+             for(int j=0;j<to;j++) {}
+     }
+     if(t.elapsedTime() <= seconds)
+     {
+         cout<<"Received Frame : "<<frames[count]<<" ";
+         if(delay)
+         {
+             cout<<"Duplicate";
+             delay = false;
+         }
+         cout<<endl;
+         count++;
+     }
+     else
+
+     {
+         cout<<"---"<<endl;
+         cout<<"Timeout"<<endl;
+         timeout = true;
+     }
+t.start();
+     if(rand()%2 || !timeout)
+     {
+         int to = 24500 + rand()%(64000 - 24500)  + 1;
+         for(int i=0;i<64000;i++)
+             for(int j=0;j<to;j++) {}
+         if(t.elapsedTime() > seconds )
+         {
+             cout<<"Delayed Ack"<<endl;
+             count--;
+             delay = true;
+         }
+         else if(!timeout)
+             cout<<"Acknowledgement : "<<frames[count]-1<<endl;
+     }
+ }while(count!=4);
+ return 0;
+}
+
+3)CSMA/CD
+#include <iostream>
+#include <cstdlib> 
+#include <ctime>   
+
+class Station {
+public:
+    Station(std::string name) : name(name) {}
+
+    void send() {
+
+        if (carrierBusy()) {
+            std::cout << name << " detects carrier busy, deferring transmission." << std::endl;
+            return;
+        }
+
+        std::cout << name << " is sending a message." << std::endl;
+
+        if (collisionDetected()) {
+            std::cout << name << " detects a collision, stopping transmission." << std::endl;
+        } else {
+            std::cout << name << " successfully transmitted the message." << std::endl;
+        }
+    }
+   bool carrierBusy() {
+        
+         return rand() % 2 == 1;
+          }
+            bool collisionDetected() {
+                                 
+             return rand()% 2 == 1;
+                              }
+                     private:
+                                      std::string name;
+    };
+
+
+           int main() {
+
+              Station stationA("Station A");
+             Station stationB("Station B");
+              int i=1;
+         
+          while(i<=10){
+                std::cout<<"Scenario"<<i<<std::endl;
+                stationA.send();
+                 stationB.send();
+                i++;
+            }
+                return 0;
+
+       }
+
+4)distance vector algorithm
+#include <iostream>
+using namespace std;
+
+struct node
+{
+    unsigned dist[10];
+    unsigned from[10];
+} DVR[10];
+
+int main()
+{
+    cout << "\n\n-------------------- Distance Vector Routing Algorithm --------------------\n";
+
+    int costmat[10][10];
+    int nodes;
+
+    cout << "\nEnter the number of nodes (max 10): ";
+    cin >> nodes;
+
+    cout << "\nEnter the cost matrix (" << nodes << " x " << nodes << "):\n";
+    for (int i = 0; i < nodes; i++)
+    {
+        for (int j = 0; j < nodes; j++)
+        {
+            cin >> costmat[i][j];
+
+            if (i == j)
+                costmat[i][j] = 0;
+
+            DVR[i].dist[j] = costmat[i][j];
+            DVR[i].from[j] = j;
+        }
+    }
+
+    for (int k = 0; k < nodes; k++)
+    {
+        for (int i = 0; i < nodes; i++)
+        {
+            for (int j = 0; j < nodes; j++)
+            {
+                if (DVR[i].dist[j] > costmat[i][k] + DVR[k].dist[j])
+                {
+                    DVR[i].dist[j] = costmat[i][k] + DVR[k].dist[j];
+                    DVR[i].from[j] = k;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < nodes; i++)
+    {
+        cout << "\n\nFor router: " << i + 1;
+        for (int j = 0; j < nodes; j++)
+        {
+            cout << "\n  Node " << j + 1
+                 << " via " << DVR[i].from[j] + 1
+                 << " Distance " << DVR[i].dist[j];
+        }
+    }
+
+    cout << "\n\n";
+    return 0;
+}
+5)least cost tree
+#include <iostream>
+#include <vector>
+#include <climits>
+
+using namespace std;
+
+const int INF = INT_MAX;
+
+class Network {
+public:
+    int numNodes;
+    vector<vector<int> > costMatrix;
+
+    Network(int nodes) : numNodes(nodes) {
+        costMatrix.resize(nodes, vector<int>(nodes, INF));
+    }
+
+    void addLink(int node1, int node2, int cost) {
+        costMatrix[node1][node2] = cost;
+        costMatrix[node2][node1] = cost;
+    }
+
+    void printLeastCostTree(int source, const vector<int>& parent) {
+        cout << "Least Cost Tree:" << endl;
+        for (int i = 0; i < numNodes; ++i) {
+            if (i != source) {
+                cout << "Node " << i << " -> Node " << parent[i] << " (Cost: " <<
+costMatrix[i][parent[i]] << ")" << endl;
+            }
+        }
+    }
+
+    void linkStateRouting(int source) {
+        vector<int> distance(numNodes, INF);
+        vector<bool> inTree(numNodes, false);
+        vector<int> parent(numNodes, -1);
+
+
+        distance[source] = 0;
+
+        for (int i = 0; i < numNodes - 1; ++i) {
+            int u = getMinDistanceVertex(distance, inTree);
+            inTree[u] = true;
+
+            for (int v = 0; v < numNodes; ++v) {
+                if (!inTree[v] && costMatrix[u][v] != INF && distance[u] + costMatrix[u][v]
+< distance[v]) {
+                    parent[v] = u;
+                    distance[v] = distance[u] + costMatrix[u][v];
+                }
+            }
+        }
+
+        printLeastCostTree(source, parent);
+    }
+
+    int getMinDistanceVertex(const vector<int>& distance, const vector<bool>& inTree)
+{
+        int minDistance = INF;
+        int minVertex = -1;
+
+        for (int v = 0; v < numNodes; ++v) {
+            if (!inTree[v] && distance[v] < minDistance) {
+                minDistance = distance[v];
+                minVertex = v;
+            }
+        }
+
+        return minVertex;
+    }
+};
+
+int main() {
+    int numNodes = 4;
+    Network network(numNodes);
+
+    network.addLink(0, 1, 4);
+    network.addLink(0, 2, 2);
+    network.addLink(1, 2, 5);
+    network.addLink(1, 3, 10);
+    network.addLink(2, 3, 1);
+
+
+    int sourceNode = 0;
+    network.linkStateRouting(sourceNode);
+
+    return 0;
+}
+6)client and server side
+client
+#include<stdio.h> 
+#include<sys/types.h> 
+#include<sys/socket.h> 
+#include<netinet/in.h> 
+#include<netdb.h> 
+#include<unistd.h> 
+#include<arpa/inet.h> 
+#define SERV_TCP_PORT 5035 
+int main(int argc,char*argv[]) 
+{ 
+       int sockfd; 
+       struct sockaddr_in serv_addr; 
+       struct hostent *server; 
+       char buffer[4096]; 
+ 
+       sockfd=socket(AF_INET,SOCK_STREAM,0); 
+       serv_addr.sin_family=AF_INET; 
+       serv_addr.sin_addr.s_addr=inet_addr("127.0.0.1"); 
+       serv_addr.sin_port=htons(SERV_TCP_PORT); 
+ 
+       printf("\nReady for sending..."); 
+       connect(sockfd,(struct sockaddr*)&serv_addr,sizeof(serv_addr)); 
+       printf("\nEnter the message to send\n"); 
+       printf("\nClient: "); 
+       fgets(buffer,4096,stdin); 
+ 
+       write(sockfd,buffer,4096); 
+       printf("Serverecho:%s",buffer); 
+       printf("\n"); 
+       close(sockfd); 
+       return 0; 
+}
+
+server
+#include<stdio.h> 
+#include<netinet/in.h> 
+#include<netdb.h> 
+#include<arpa/inet.h> 
+#include<unistd.h>  
+#define SERV_TCP_PORT 5035 
+int main(int argc,char**argv) 
+{ 
+
+       int sockfd,newsockfd; 
+       socklen_t clength; 
+       struct sockaddr_in serv_addr,cli_addr; 
+       char buffer[4096]; 
+ 
+
+       sockfd=socket(AF_INET,SOCK_STREAM,0); 
+   
+  
+       serv_addr.sin_family=AF_INET; 
+       serv_addr.sin_addr.s_addr=INADDR_ANY; 
+       serv_addr.sin_port=htons(SERV_TCP_PORT); 
+ 
+       printf("\nStart"); 
+   
+       bind(sockfd,(struct sockaddr*)&serv_addr,sizeof(serv_addr)); 
+       printf("\nListening..."); 
+       printf("\n"); 
+ 
+       listen(sockfd,5); 
+ 
+  
+       clength=sizeof(cli_addr); 
+       newsockfd=accept(sockfd,(struct sockaddr*)&cli_addr,&clength); 
+       printf("\nConnection Accepted"); 
+       printf("\n"); 
+
+       read(newsockfd,buffer,4096); 
+       printf("\nClient message:%s",buffer); 
+ 
+       write(newsockfd,buffer,4096); 
+       printf("\n"); 
+ 
+       close(sockfd); 
+       close(newsockfd); 
+       return 0; 
+} 
+
